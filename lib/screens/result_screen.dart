@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/formatters.dart';
 import '../core/responsive.dart';
 import '../core/theme/app_colors.dart';
+import '../models/score_entry.dart';
 import '../state/quiz_controller.dart';
+import '../state/score_history_controller.dart';
 import '../widgets/primary_action.dart';
 import '../widgets/review_tile.dart';
 import '../widgets/score_dial.dart';
@@ -33,6 +36,7 @@ class ResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final quiz = context.watch<QuizController>();
+    final history = context.watch<ScoreHistoryController>();
     final palette = context.palette;
     final textTheme = Theme.of(context).textTheme;
     final category = quiz.category;
@@ -56,6 +60,7 @@ class ResultScreen extends StatelessWidget {
 
     final isWide = context.viewport.width >= 900;
     final message = _messageFor(quiz.score);
+    final best = history.bestFor(category.id);
 
     return Scaffold(
       body: TunasBackdrop(
@@ -114,6 +119,7 @@ class ResultScreen extends StatelessWidget {
                                   child: _Summary(
                                     message: message,
                                     quiz: quiz,
+                                    best: best,
                                     onPlayAgain: () => _playAgain(context),
                                     onHome: () => _goHome(context),
                                   ),
@@ -133,6 +139,7 @@ class ResultScreen extends StatelessWidget {
                                 _Summary(
                                   message: message,
                                   quiz: quiz,
+                                  best: best,
                                   onPlayAgain: () => _playAgain(context),
                                   onHome: () => _goHome(context),
                                 ),
@@ -221,12 +228,14 @@ class _Summary extends StatelessWidget {
   const _Summary({
     required this.message,
     required this.quiz,
+    required this.best,
     required this.onPlayAgain,
     required this.onHome,
   });
 
   final String message;
   final QuizController quiz;
+  final ScoreEntry? best;
   final VoidCallback onPlayAgain;
   final VoidCallback onHome;
 
@@ -264,10 +273,106 @@ class _Summary extends StatelessWidget {
             ],
           ),
         ),
+        SizedBox(height: 18 * scale),
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: 14 * scale,
+            vertical: 12 * scale,
+          ),
+          decoration: BoxDecoration(
+            color: palette.wash,
+            borderRadius: BorderRadius.circular(12 * scale),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _ResultMeta(
+                  icon: Icons.timer_outlined,
+                  label: 'DURASI',
+                  value: formatDuration(quiz.elapsed.inSeconds),
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 26 * scale,
+                margin: EdgeInsets.symmetric(horizontal: 12 * scale),
+                color: palette.line,
+              ),
+              Expanded(
+                child: _ResultMeta(
+                  icon: Icons.emoji_events_outlined,
+                  label: 'TERBAIK',
+                  value: best == null ? '—' : '${best!.correct}/${best!.total}',
+                ),
+              ),
+            ],
+          ),
+        ),
         SizedBox(height: 24 * scale),
         PrimaryAction(label: 'Main lagi', onPressed: onPlayAgain),
         SizedBox(height: 6 * scale),
         TextButton(onPressed: onHome, child: const Text('Kembali ke beranda')),
+        SizedBox(height: 4 * scale),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.lock_outline_rounded,
+              size: 12 * scale,
+              color: palette.muted,
+            ),
+            SizedBox(width: 5 * scale),
+            Flexible(
+              child: Text(
+                'Sesi ini tercatat di riwayat perangkat.',
+                style: textTheme.bodySmall?.copyWith(fontSize: 11 * scale),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ResultMeta extends StatelessWidget {
+  const _ResultMeta({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        Icon(icon, size: 15 * context.typeScale, color: palette.forest),
+        SizedBox(width: 7 * context.typeScale),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label, style: textTheme.labelMedium),
+            SizedBox(height: 2 * context.typeScale),
+            Text(
+              value,
+              style: TextStyle(
+                fontFamily: 'Fraunces',
+                fontSize: 17 * context.typeScale,
+                height: 1.1,
+                fontWeight: FontWeight.w600,
+                color: palette.ink,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
