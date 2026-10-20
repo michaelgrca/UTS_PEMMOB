@@ -6,14 +6,15 @@ import '../core/theme/app_colors.dart';
 import '../data/quiz_repository.dart';
 import '../state/quiz_controller.dart';
 import '../widgets/category_option.dart';
-import '../widgets/brand_mark.dart';
 import '../widgets/primary_action.dart';
 import '../widgets/progress_segments.dart';
 import '../widgets/section_label.dart';
 import '../widgets/surface_card.dart';
 import '../widgets/tunas_backdrop.dart';
 import '../widgets/tunas_top_bar.dart';
+import 'history_screen.dart';
 import 'quiz_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -106,13 +107,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _showAbout() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _AboutSheet(),
-    );
+  void _openHistory() {
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const HistoryScreen()));
+  }
+
+  void _openSettings() {
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen()));
   }
 
   @override
@@ -155,21 +157,37 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         TunasTopBar(
+                          compactBrand: context.isCompact,
                           actions: [
-                            if (context.isCompact)
+                            if (context.isCompact) ...[
                               TunasIconButton(
-                                icon: Icons.info_outline_rounded,
-                                tooltip: 'Tentang Tunas',
-                                onPressed: _showAbout,
-                              )
-                            else
-                              TextButton(
-                                onPressed: _showAbout,
-                                child: Text(
-                                  'Tentang',
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
+                                icon: Icons.insights_outlined,
+                                tooltip: 'Riwayat skor',
+                                onPressed: _openHistory,
                               ),
+                              TunasIconButton(
+                                icon: Icons.tune_rounded,
+                                tooltip: 'Pengaturan',
+                                onPressed: _openSettings,
+                              ),
+                            ] else ...[
+                              TextButton.icon(
+                                onPressed: _openHistory,
+                                icon: Icon(
+                                  Icons.insights_outlined,
+                                  size: 17 * context.typeScale,
+                                ),
+                                label: const Text('Riwayat'),
+                              ),
+                              TextButton.icon(
+                                onPressed: _openSettings,
+                                icon: Icon(
+                                  Icons.tune_rounded,
+                                  size: 17 * context.typeScale,
+                                ),
+                                label: const Text('Pengaturan'),
+                              ),
+                            ],
                           ],
                         ),
                         SizedBox(height: context.sp(isWide ? 58 : 36)),
@@ -211,7 +229,9 @@ class _HeroCopy extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final textTheme = Theme.of(context).textTheme;
-    final headline = context.isCompact
+    final headline = context.viewport.width < 350
+        ? textTheme.displaySmall
+        : context.isCompact
         ? textTheme.displayMedium
         : textTheme.displayLarge;
 
@@ -549,145 +569,6 @@ class _Footer extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _AboutSheet extends StatelessWidget {
-  const _AboutSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final textTheme = Theme.of(context).textTheme;
-    final scale = context.typeScale;
-    final maxHeight = MediaQuery.sizeOf(context).height * 0.84;
-
-    return Container(
-      constraints: BoxConstraints(maxHeight: maxHeight),
-      decoration: BoxDecoration(
-        color: palette.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28 * scale)),
-        border: Border.all(color: palette.line),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(24 * scale),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Center(
-                child: Container(
-                  width: 44 * scale,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: palette.line,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              SizedBox(height: 20 * scale),
-              Row(
-                children: [
-                  const BrandMark(compact: true),
-                  const Spacer(),
-                  TunasIconButton(
-                    icon: Icons.close_rounded,
-                    tooltip: 'Tutup',
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20 * scale),
-              Text('Tentang Tunas', style: textTheme.headlineSmall),
-              SizedBox(height: 8 * scale),
-              Text(
-                'Tunas adalah kuis pilihan ganda tentang alam Indonesia. '
-                'Semua pertanyaan disimpan secara lokal dan dapat dimainkan '
-                'tanpa akun maupun koneksi internet.',
-                style: textTheme.bodyMedium,
-              ),
-              SizedBox(height: 20 * scale),
-              _AboutLine(
-                icon: Icons.layers_outlined,
-                title:
-                    '${QuizRepository.categories.length} topik, '
-                    '${QuizRepository.totalQuestions} pertanyaan',
-                caption:
-                    'Rimba & satwa, bumi & iklim, serta sains hijau—masing-'
-                    'masing dengan pembahasan singkat.',
-              ),
-              SizedBox(height: 14 * scale),
-              _AboutLine(
-                icon: Icons.format_paint_outlined,
-                title: 'Tipografi',
-                caption:
-                    'Fraunces untuk judul, Plus Jakarta Sans untuk teks. '
-                    'Keduanya dilisensikan di bawah SIL Open Font License.',
-              ),
-              SizedBox(height: 14 * scale),
-              _AboutLine(
-                icon: Icons.contrast_rounded,
-                title: 'Dua tema, satu cerita',
-                caption:
-                    'Mode terang dan gelap bisa diganti kapan saja dari '
-                    'tombol di kanan atas.',
-              ),
-              SizedBox(height: 22 * scale),
-              Text(
-                'VERSI 0.1 · DIBUAT UNTUK BELAJAR',
-                style: textTheme.labelMedium,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AboutLine extends StatelessWidget {
-  const _AboutLine({
-    required this.icon,
-    required this.title,
-    required this.caption,
-  });
-
-  final IconData icon;
-  final String title;
-  final String caption;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final textTheme = Theme.of(context).textTheme;
-    final scale = context.typeScale;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 34 * scale,
-          height: 34 * scale,
-          decoration: BoxDecoration(
-            color: palette.wash,
-            borderRadius: BorderRadius.circular(9 * scale),
-          ),
-          child: Icon(icon, size: 17 * scale, color: palette.forest),
-        ),
-        SizedBox(width: 12 * scale),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: textTheme.titleSmall),
-              SizedBox(height: 3 * scale),
-              Text(caption, style: textTheme.bodySmall),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
