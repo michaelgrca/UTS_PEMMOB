@@ -20,6 +20,7 @@ class ThemeSwitch extends StatelessWidget {
 
     return Tooltip(
       message: isDark ? 'Mode terang' : 'Mode gelap',
+      excludeFromSemantics: true,
       child: Semantics(
         button: true,
         label: isDark ? 'Aktifkan mode terang' : 'Aktifkan mode gelap',

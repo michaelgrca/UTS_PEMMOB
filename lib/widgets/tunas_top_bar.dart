@@ -29,7 +29,10 @@ class TunasTopBar extends StatelessWidget {
         if (leading != null) ...[leading!, SizedBox(width: 12 * scale)],
         if (brand) BrandMark(compact: compactBrand),
         const Spacer(),
-        ...actions,
+        for (var i = 0; i < actions.length; i++) ...[
+          actions[i],
+          if (i < actions.length - 1) SizedBox(width: 8 * scale),
+        ],
         if (actions.isNotEmpty) SizedBox(width: 10 * scale),
         const ThemeSwitch(),
       ],
@@ -79,6 +82,10 @@ class TunasIconButton extends StatelessWidget {
     );
 
     if (tooltip == null) return button;
-    return Tooltip(message: tooltip!, child: button);
+    return Tooltip(
+      message: tooltip!,
+      excludeFromSemantics: true,
+      child: button,
+    );
   }
 }
