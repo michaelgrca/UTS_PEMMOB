@@ -18,6 +18,8 @@ class QuizController extends ChangeNotifier {
   final Map<String, int> _answers = {};
   int _index = 0;
   QuizStatus _status = QuizStatus.idle;
+  DateTime? _startedAt;
+  DateTime? _finishedAt;
 
   String get playerName => _playerName;
   QuizCategory? get category => _category;
@@ -25,6 +27,16 @@ class QuizController extends ChangeNotifier {
   Map<String, int> get answers => Map.unmodifiable(_answers);
   int get index => _index;
   QuizStatus get status => _status;
+  DateTime? get startedAt => _startedAt;
+  DateTime? get finishedAt => _finishedAt;
+
+  /// Wall-clock time spent on the current attempt. It stops growing once the
+  /// last question is submitted, so the result screen can show a stable value.
+  Duration get elapsed {
+    final startedAt = _startedAt;
+    if (startedAt == null) return Duration.zero;
+    return (_finishedAt ?? DateTime.now()).difference(startedAt);
+  }
 
   bool get hasActiveSession =>
       _status == QuizStatus.playing && _questions.isNotEmpty;
@@ -67,6 +79,8 @@ class QuizController extends ChangeNotifier {
     _answers.clear();
     _index = 0;
     _status = QuizStatus.playing;
+    _startedAt = DateTime.now();
+    _finishedAt = null;
     notifyListeners();
   }
 
@@ -87,6 +101,7 @@ class QuizController extends ChangeNotifier {
     if (_status != QuizStatus.playing) return;
     if (isLast) {
       _status = QuizStatus.finished;
+      _finishedAt = DateTime.now();
     } else {
       _index++;
     }
@@ -122,6 +137,8 @@ class QuizController extends ChangeNotifier {
     _answers.clear();
     _index = 0;
     _status = QuizStatus.idle;
+    _startedAt = null;
+    _finishedAt = null;
     notifyListeners();
   }
 }

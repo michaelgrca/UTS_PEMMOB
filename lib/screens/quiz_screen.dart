@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../core/responsive.dart';
 import '../core/theme/app_colors.dart';
+import '../models/score_entry.dart';
 import '../state/quiz_controller.dart';
+import '../state/score_history_controller.dart';
 import '../widgets/primary_action.dart';
 import '../widgets/progress_segments.dart';
 import '../widgets/quiz_option_tile.dart';
@@ -25,6 +27,7 @@ class _QuizScreenState extends State<QuizScreen> {
   final ScrollController _scrollController = ScrollController();
   late final QuizController _quiz;
   late int _lastIndex;
+  bool _finishing = false;
 
   @override
   void initState() {
@@ -88,17 +91,42 @@ class _QuizScreenState extends State<QuizScreen> {
     Navigator.of(context).pop();
   }
 
-  void _next() {
+  Future<void> _next() async {
+    if (_finishing) return;
     final quiz = context.read<QuizController>();
     if (quiz.selectedIndex == null) return;
 
     final wasLast = quiz.isLast;
     quiz.next();
-    if (wasLast && mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const ResultScreen()),
-      );
+    if (!wasLast || !mounted) return;
+
+    _finishing = true;
+    final category = quiz.category;
+    if (category == null) return;
+
+    final completedAt = quiz.finishedAt ?? DateTime.now();
+    final entry = ScoreEntry(
+      id: '${completedAt.microsecondsSinceEpoch}-${category.id}',
+      playerName: quiz.playerName,
+      categoryId: category.id,
+      categoryName: category.name,
+      correct: quiz.correctCount,
+      total: quiz.total,
+      durationSeconds: quiz.elapsed.inSeconds,
+      completedAt: completedAt,
+    );
+
+    // Local storage should never prevent the player from seeing their result.
+    try {
+      await context.read<ScoreHistoryController>().add(entry);
+    } catch (_) {
+      // The result screen still works; the attempt just is not persisted.
     }
+
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => const ResultScreen()),
+    );
   }
 
   @override
